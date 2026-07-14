@@ -49,17 +49,25 @@ export function NowPlayingCard({ cue, currentTime }: NowPlayingCardProps) {
         <div className="flex gap-3">
           <div className="size-12 shrink-0 rounded-md bg-gradient-to-br from-teal-300 via-emerald-500 to-pink-400" />
           <div className="flex min-w-0 flex-col justify-center gap-0.5">
-            <div className="truncate text-sm font-semibold">{cue.title}</div>
-            <div className="truncate text-xs text-white/60">{cue.artist}</div>
-            <div className="flex items-center gap-1.5 text-[11px] text-white/50">
-              <Badge
-                variant="secondary"
-                className="bg-white/10 text-white/70"
-              >
-                {cue.genre}
-              </Badge>
-              <span>{cue.year}</span>
+            <div className="truncate text-sm font-semibold">
+              {cue.title ?? "Música não identificada"}
             </div>
+            {cue.artist && (
+              <div className="truncate text-xs text-white/60">{cue.artist}</div>
+            )}
+            {(cue.genre || cue.year) && (
+              <div className="flex items-center gap-1.5 text-[11px] text-white/50">
+                {cue.genre && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-white/10 text-white/70"
+                  >
+                    {cue.genre}
+                  </Badge>
+                )}
+                {cue.year && <span>{cue.year}</span>}
+              </div>
+            )}
           </div>
         </div>
 
@@ -77,18 +85,20 @@ export function NowPlayingCard({ cue, currentTime }: NowPlayingCardProps) {
           </div>
         </div>
 
-        <a
-          href={cue.spotifyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(
-            buttonVariants({ variant: "default" }),
-            "h-8 w-full justify-center rounded-full bg-emerald-500 text-black hover:bg-emerald-400"
-          )}
-        >
-          <Play className="fill-current" />
-          Ouvir no Spotify
-        </a>
+        {cue.spotifyUrl && (
+          <a
+            href={cue.spotifyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              buttonVariants({ variant: "default" }),
+              "h-8 w-full justify-center rounded-full bg-emerald-500 text-black hover:bg-emerald-400"
+            )}
+          >
+            <Play className="fill-current" />
+            Ouvir no Spotify
+          </a>
+        )}
       </CardContent>
     </Card>
   )
