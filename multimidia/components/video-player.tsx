@@ -1,7 +1,16 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Maximize, Minimize, Pause, Play, Volume2, VolumeX } from "lucide-react"
+import {
+  AlertTriangle,
+  Loader2,
+  Maximize,
+  Minimize,
+  Pause,
+  Play,
+  Volume2,
+  VolumeX,
+} from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { formatTime } from "@/lib/format-time"
@@ -18,9 +27,13 @@ import {
 } from "@/components/video-progress-bar"
 
 const MUSIC_CUE_COLOR = "#2dd4bf"
+const UNMATCHED_CUE_COLOR = "#64748b"
+
+type CuesStatus = "loading" | "ready" | "error"
 
 interface VideoPlayerProps {
   src: string
+  slug: string
   title?: string
   chapters?: VideoChapter[]
   className?: string
@@ -28,6 +41,7 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({
   src,
+  slug,
   title,
   chapters = [],
   className,
@@ -42,16 +56,26 @@ export function VideoPlayer({
   const [isMuted, setIsMuted] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [musicCues, setMusicCues] = useState<MusicCue[]>([])
+  const [cuesStatus, setCuesStatus] = useState<CuesStatus>("loading")
+  const [cuesError, setCuesError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    fetchMusicCues(src).then((cues) => {
-      if (!cancelled) setMusicCues(cues)
-    })
+    fetchMusicCues(slug)
+      .then((cues) => {
+        if (cancelled) return
+        setMusicCues(cues)
+        setCuesStatus("ready")
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        setCuesError(error instanceof Error ? error.message : String(error))
+        setCuesStatus("error")
+      })
     return () => {
       cancelled = true
     }
-  }, [src])
+  }, [slug])
 
   const activeMusicCue = findActiveCue(musicCues, currentTime)
 
@@ -61,7 +85,7 @@ export function VideoPlayer({
       ...musicCues.map((cue) => ({
         start: cue.start,
         end: cue.end,
-        color: MUSIC_CUE_COLOR,
+        color: cue.matched ? MUSIC_CUE_COLOR : UNMATCHED_CUE_COLOR,
       })),
     ],
     [chapters, musicCues]
@@ -77,8 +101,11 @@ export function VideoPlayer({
     const onPause = () => setIsPlaying(false)
     const onVolumeChange = () => setIsMuted(video.muted)
     const onProgress = () => {
-      if (video.buffered.length > 0) {
-        setBuffered(video.buffered.end(video.buffered.length - 1))
+      const { buffered } = video
+      if (buffered.length > 0) {
+        try {
+          setBuffered(buffered.end(buffered.length - 1))
+        } catch {}
       }
     }
 
@@ -156,6 +183,36 @@ export function VideoPlayer({
         onClick={togglePlay}
         playsInline
       />
+
+      {cuesStatus === "loading" && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm">
+          <div className="relative flex size-14 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-600">
+            <div className="absolute inset-x-0 h-3 -translate-y-1/2 animate-scan-light bg-emerald-300/80 blur-[3px]" />
+            <Loader2 className="relative z-10 size-6 animate-spin text-white" />
+          </div>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <div className="text-sm font-medium text-white">
+              Processando o pipeline…
+            </div>
+            <div className="max-w-xs text-xs text-white/60">
+              Detectando trechos de música e identificando as faixas no vídeo.
+              Isso pode levar alguns minutos na primeira vez.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cuesStatus === "error" && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/70 p-6 backdrop-blur-sm">
+          <AlertTriangle className="size-8 text-amber-400" />
+          <div className="text-sm font-medium text-white">
+            Não foi possível processar o vídeo
+          </div>
+          <pre className="max-h-40 max-w-lg overflow-auto rounded-md bg-black/60 p-3 text-left text-[11px] whitespace-pre-wrap text-white/60">
+            {cuesError}
+          </pre>
+        </div>
+      )}
 
       {!isPlaying && (
         <button

@@ -1,0 +1,13 @@
+# Dependencias do sistema de audio fingerprinting.
+# sqlite3 NAO aparece aqui porque faz parte da biblioteca padrao do Python.
+#
+# IMPORTANTE: librosa depende de numba/llvmlite, que costumam demorar a
+# suportar versoes muito novas do Python. Use Python 3.12 (veja README/plano).
+numpy
+scipy
+librosa
+soundfile
+# yt-dlp: usado por download.py para baixar audio de playlists do YouTube.
+# Requer o ffmpeg instalado no sistema (ex.: brew install ffmpeg) para extrair
+# e converter o audio.
+yt-dlp

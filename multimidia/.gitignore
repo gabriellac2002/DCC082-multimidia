@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# cache dos cues gerados pelo pipeline
+.cue-cache/
+
+# variaveis de ambiente locais
+.env.local
+.env*.local
