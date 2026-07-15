@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
   AlertTriangle,
+  FlaskConical,
   Loader2,
   Maximize,
   Minimize,
@@ -21,6 +22,7 @@ import {
   IdentifyingCard,
   NowPlayingCard,
 } from "@/components/music-detection-card"
+import { ExplainPanel } from "@/components/explain-panel"
 import {
   VideoProgressBar,
   type VideoChapter,
@@ -58,6 +60,7 @@ export function VideoPlayer({
   const [musicCues, setMusicCues] = useState<MusicCue[]>([])
   const [cuesStatus, setCuesStatus] = useState<CuesStatus>("loading")
   const [cuesError, setCuesError] = useState<string | null>(null)
+  const [explainCue, setExplainCue] = useState<MusicCue | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -78,6 +81,17 @@ export function VideoPlayer({
   }, [slug])
 
   const activeMusicCue = findActiveCue(musicCues, currentTime)
+
+  const EXPLAIN_WINDOW = 6
+
+  function openExplain() {
+    const cue =
+      activeMusicCue?.cue ??
+      musicCues.find((c) => c.matched) ??
+      musicCues[0] ??
+      null
+    setExplainCue(cue)
+  }
 
   const allChapters = useMemo(
     () => [
@@ -279,6 +293,18 @@ export function VideoPlayer({
 
             <div className="flex-1" />
 
+            {musicCues.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-white hover:bg-white/10 hover:text-white"
+                onClick={openExplain}
+              >
+                <FlaskConical className="size-4" />
+                Como funciona
+              </Button>
+            )}
+
             <Button
               variant="ghost"
               size="icon"
@@ -290,6 +316,17 @@ export function VideoPlayer({
           </div>
         </div>
       </div>
+
+      {explainCue && (
+        <ExplainPanel
+          key={`${explainCue.start}-${explainCue.end}`}
+          slug={slug}
+          title={explainCue.title ?? title ?? "trecho"}
+          start={explainCue.start}
+          end={Math.min(explainCue.start + EXPLAIN_WINDOW, explainCue.end)}
+          onClose={() => setExplainCue(null)}
+        />
+      )}
     </div>
   )
 }
